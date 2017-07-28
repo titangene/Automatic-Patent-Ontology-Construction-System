@@ -154,6 +154,25 @@ public class OntologyConstruction {
 				// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
 				PatentID_OWLIndividual_SetDataPropertyValue();
 				
+				// 如果 該筆專利沒有 "參考文獻"，就不會建立 "is_referenced_by(被參考)" 物件屬性 關聯
+				if (patent_references != "" || patent_references != "無") {
+//					String[] patent_reference_ary = patent_references.split("; ");
+					// 正規表達式：找出 參考文獻中 所有的 專利編號 (任何國家、單位的專利編號)
+					matcher = pattern.matcher(patent_references);
+					// 取出符合的項目
+					while (matcher.find()) {
+					    if (!matcher.group(1).contains(".")) {
+					    	String patent_reference_patentID = matcher.group(2);
+					    	// 取得該 "專利編號" 的實例，如果沒有就在 "專利編號" 類別中建立新的 "專利編號" 實例
+					    	patentID_is_referenced_by_OWLIndividual = owlModel.getOWLIndividual(patent_reference_patentID);
+							if (patentID_is_referenced_by_OWLIndividual == null)
+								patentID_is_referenced_by_OWLIndividual = patent_id_OWLClass.createOWLIndividual(patent_reference_patentID);
+							// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
+							patentID_is_referenced_by_OWLIndividual.setPropertyValue(is_referenced_by_OWLObjectProperty, patentID_OWLIndividual);
+				    	}
+					}
+				}
+				
 				count++;
 				if (count == 1000) break;
 			}
