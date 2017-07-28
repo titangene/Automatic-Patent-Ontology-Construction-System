@@ -124,11 +124,11 @@ public class OntologyConstruction {
 	/**
 	 * 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
 	 */
-	private void PatentID_OWLIndividual_SetDataPropertyValue() throws Exception {
-		patentID_OWLIndividual.setPropertyValue(patent_name_OWLDataProperty, patent_name);
-		patentID_OWLIndividual.setPropertyValue(application_date_OWLDataProperty, patent_applicationDate);
-		patentID_OWLIndividual.setPropertyValue(inventor_OWLDataProperty, patent_inventor);
-		patentID_OWLIndividual.setPropertyValue(applicant_OWLDataProperty, patent_applicant);
+	private void PatentID_OWLIndividual_AddDataPropertyValue() throws Exception {
+		patentID_OWLIndividual.addPropertyValue(patent_name_OWLDataProperty, patent_name);
+		patentID_OWLIndividual.addPropertyValue(application_date_OWLDataProperty, patent_applicationDate);
+		patentID_OWLIndividual.addPropertyValue(inventor_OWLDataProperty, patent_inventor);
+		patentID_OWLIndividual.addPropertyValue(applicant_OWLDataProperty, patent_applicant);
 	}
 	
 	private void ContentAnalysis() throws Exception {
@@ -152,7 +152,7 @@ public class OntologyConstruction {
 					patentID_OWLIndividual = patent_id_OWLClass.createOWLIndividual(patent_id);
 				
 				// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
-				PatentID_OWLIndividual_SetDataPropertyValue();
+				PatentID_OWLIndividual_AddDataPropertyValue();
 				
 				// 如果 該筆專利沒有 "參考文獻"，就不會建立 "is_referenced_by(被參考)" 物件屬性 關聯
 				if (patent_references != "" || patent_references != "無") {
@@ -168,7 +168,7 @@ public class OntologyConstruction {
 							if (patentID_is_referenced_by_OWLIndividual == null)
 								patentID_is_referenced_by_OWLIndividual = patent_id_OWLClass.createOWLIndividual(patent_reference_patentID);
 							// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
-							patentID_is_referenced_by_OWLIndividual.setPropertyValue(is_referenced_by_OWLObjectProperty, patentID_OWLIndividual);
+							patentID_is_referenced_by_OWLIndividual.addPropertyValue(is_referenced_by_OWLObjectProperty, patentID_OWLIndividual);
 				    	}
 					}
 				}
