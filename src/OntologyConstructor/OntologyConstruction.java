@@ -121,8 +121,47 @@ public class OntologyConstruction {
 		is_referenced_by_OWLObjectProperty.setRange(patent_id_OWLClass);
 	}
 	
+	/**
+	 * 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
+	 */
+	private void PatentID_OWLIndividual_SetDataPropertyValue() throws Exception {
+		patentID_OWLIndividual.setPropertyValue(patent_name_OWLDataProperty, patent_name);
+		patentID_OWLIndividual.setPropertyValue(application_date_OWLDataProperty, patent_applicationDate);
+		patentID_OWLIndividual.setPropertyValue(inventor_OWLDataProperty, patent_inventor);
+		patentID_OWLIndividual.setPropertyValue(applicant_OWLDataProperty, patent_applicant);
+	}
+	
 	private void ContentAnalysis() throws Exception {
-		
+		String selectSQL = "select * from crawler";
+		try {
+			mysql.stat = mysql.con.createStatement();
+			mysql.rs = mysql.stat.executeQuery(selectSQL);
+			int count = 0;
+			while (mysql.rs.next()) {
+				patent_id = "TW" + mysql.rs.getString("id");
+				patent_name = mysql.rs.getString("name");
+				patent_applicationDate  = mysql.rs.getString("application_date");
+				patent_inventor  = mysql.rs.getString("inventor");
+				patent_applicant  = mysql.rs.getString("applicant");
+				patent_references = mysql.rs.getString("reference");
+//				System.out.println(patent_id + "\t" + patent_name);
+				
+				// 取得該 "專利編號" 的實例，如果沒有就在 "專利編號" 類別中建立新的 "專利編號" 實例
+				patentID_OWLIndividual = owlModel.getOWLIndividual(patent_id);
+				if (patentID_OWLIndividual == null)
+					patentID_OWLIndividual = patent_id_OWLClass.createOWLIndividual(patent_id);
+				
+				// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
+				PatentID_OWLIndividual_SetDataPropertyValue();
+				
+				count++;
+				if (count == 1000) break;
+			}
+		} catch (SQLException e) {
+			System.out.println("DropDB Exception :" + e.toString());
+		} finally {
+			mysql.Close();
+		}
 	}
 	
 	/**
