@@ -3,6 +3,7 @@ package OntologyConstructor;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,8 +16,11 @@ import edu.stanford.smi.protegex.owl.model.OWLNamedClass;
 import edu.stanford.smi.protegex.owl.model.OWLObjectProperty;
 import edu.stanford.smi.protegex.owl.writer.rdfxml.rdfwriter.OWLModelWriter;
 
+import jdbc.DBOperations;
+import jdbc.Mysql_Select;
+
 public class OntologyConstruction {
-	jdbcmysql mysql = new jdbcmysql();
+	DBOperations dbOperations = new DBOperations();
 	
 	OWLModel owlModel;
 	
@@ -52,9 +56,11 @@ public class OntologyConstruction {
 	String patent_references;
 	
 	// 正規表達式：找出 參考文獻中 所有的 專利編號 (任何國家、單位的專利編號)
-	final String regex = "(\\W?)([A-Z]{2,4}[0-9]{1,5}[A-Z-\\/／]?[0-9]{2,}[-(]?[A-Z]?[0-9]+[)]?[A-Z]?[A-Z]?);?";
-	final Pattern pattern = Pattern.compile(regex);
+	final String regex_reference_patentID = "(\\W?)([A-Z]{2,4}[0-9]{1,5}[A-Z-\\/／]?[0-9]{2,}[-(]?[A-Z]?[0-9]+[)]?[A-Z]?[A-Z]?)";
+	Pattern pattern;
 	Matcher matcher;
+	
+	final String selectSQL = "select * from crawler";
 	
 	public void CreateOntology() {
 		try {
@@ -65,7 +71,7 @@ public class OntologyConstruction {
 			
 			ContentAnalysis();
 			
-			SaveOntology();
+			SaveOntology_to_OWL();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -131,62 +137,91 @@ public class OntologyConstruction {
 		patentID_OWLIndividual.addPropertyValue(applicant_OWLDataProperty, patent_applicant);
 	}
 	
-	private void ContentAnalysis() throws Exception {
-		String selectSQL = "select * from crawler";
-		try {
-			mysql.stat = mysql.con.createStatement();
-			mysql.rs = mysql.stat.executeQuery(selectSQL);
-			int count = 0;
-			while (mysql.rs.next()) {
-				patent_id = "TW" + mysql.rs.getString("id");
-				patent_name = mysql.rs.getString("name");
-				patent_applicationDate  = mysql.rs.getString("application_date");
-				patent_inventor  = mysql.rs.getString("inventor");
-				patent_applicant  = mysql.rs.getString("applicant");
-				patent_references = mysql.rs.getString("reference");
-//				System.out.println(patent_id + "\t" + patent_name);
-				
-				// 取得該 "專利編號" 的實例，如果沒有就在 "專利編號" 類別中建立新的 "專利編號" 實例
-				patentID_OWLIndividual = owlModel.getOWLIndividual(patent_id);
-				if (patentID_OWLIndividual == null)
-					patentID_OWLIndividual = patent_id_OWLClass.createOWLIndividual(patent_id);
-				
-				// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
-				PatentID_OWLIndividual_AddDataPropertyValue();
-				
-				// 如果 該筆專利沒有 "參考文獻"，就不會建立 "is_referenced_by(被參考)" 物件屬性 關聯
-				if (patent_references != "" || patent_references != "無") {
-//					String[] patent_reference_ary = patent_references.split("; ");
-					// 正規表達式：找出 參考文獻中 所有的 專利編號 (任何國家、單位的專利編號)
-					matcher = pattern.matcher(patent_references);
-					// 取出符合的項目
-					while (matcher.find()) {
-					    if (!matcher.group(1).contains(".")) {
-					    	String patent_reference_patentID = matcher.group(2);
-					    	// 取得該 "專利編號" 的實例，如果沒有就在 "專利編號" 類別中建立新的 "專利編號" 實例
-					    	patentID_is_referenced_by_OWLIndividual = owlModel.getOWLIndividual(patent_reference_patentID);
-							if (patentID_is_referenced_by_OWLIndividual == null)
-								patentID_is_referenced_by_OWLIndividual = patent_id_OWLClass.createOWLIndividual(patent_reference_patentID);
-							// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
-							patentID_is_referenced_by_OWLIndividual.addPropertyValue(is_referenced_by_OWLObjectProperty, patentID_OWLIndividual);
-				    	}
-					}
-				}
-				
-				count++;
-				if (count == 1000) break;
-			}
-		} catch (SQLException e) {
-			System.out.println("DropDB Exception :" + e.toString());
-		} finally {
-			mysql.Close();
+	/**
+	 * 新增 被參考的 "專利編號" 實例 與 參考該  "專利編號" 實例之間的 "is_referenced_by(被參考)" 物件屬性關聯
+	 */
+	private void PatentID_is_referenced_by_OWLIndividual_AddObjectPropertyValue() throws Exception {
+		patentID_is_referenced_by_OWLIndividual.addPropertyValue(is_referenced_by_OWLObjectProperty, patentID_OWLIndividual);
+	}
+	
+	/**
+	 * 如果已有名為 OWLIndividual_name 的實例，就直接取得 OWLIndividual，反之，在 OWLClass 類別中建立新的 OWLIndividual
+	 */
+	private OWLIndividual getOWLIndividual(OWLNamedClass OWLClass, String OWLIndividual_name) throws Exception {
+		OWLIndividual _OWLIndividual = owlModel.getOWLIndividual(OWLIndividual_name);
+		if (_OWLIndividual == null) return OWLClass.createOWLIndividual(OWLIndividual_name);
+		else return _OWLIndividual;
+	}
+	
+	private void BuildRelationships_PatentsAreReferencedByPatents() throws Exception {
+//		String[] patent_reference_ary = patent_references.split("; ");
+		// 正規表達式：找出 參考文獻中 所有的 專利編號 (任何國家、單位的專利編號)
+		matcher = SetMatcher(regex_reference_patentID, patent_references);
+		// 取出符合的項目
+		while (matcher.find()) {
+		    if (IsPatentID_Regex()) {
+		    	String patent_reference_patentID = matcher.group(2);
+		    	// 如果已有名為 patent_reference_patentID 的實例，就直接取得 "被參考的專利編號" 實例
+		    	// 反之，在 "專利編號" 類別中建立新的 "被參考的專利編號" 實例
+		    	patentID_is_referenced_by_OWLIndividual = getOWLIndividual(patent_id_OWLClass, patent_reference_patentID);
+		    	// 新增 被參考的 "專利編號" 實例 與 參考該  "專利編號" 實例之間的 "is_referenced_by(被參考)" 物件屬性關聯
+		    	PatentID_is_referenced_by_OWLIndividual_AddObjectPropertyValue();
+	    	}
 		}
+	}
+	
+	private Matcher SetMatcher(String _regex, String matcher_value) throws Exception {
+		pattern = Pattern.compile(_regex);
+		return pattern.matcher(matcher_value);
+	}
+	
+	private boolean IsPatentID_Regex() {
+		// TODO Array PatentID Filter
+		return !matcher.group(1).contains(".");
+	}
+	
+	private boolean hasPatentReferences() {
+		// TODO 其他無參考文獻的可能
+		return patent_references != "" || patent_references != "無";
+	}
+	
+	private void ContentAnalysis() throws Exception {
+		dbOperations.SelectTable(selectSQL, new Mysql_Select() {
+			@Override
+			public void select(ResultSet rs) throws SQLException {
+				int count = 0;
+				while (rs.next()) {
+					// DB 內都是台灣專利，所以自動加上國碼
+					patent_id = "TW" + rs.getString("id");
+					patent_name = rs.getString("name");
+					patent_inventor = rs.getString("inventor");
+					patent_applicant = rs.getString("applicant");
+					patent_references = rs.getString("reference");
+					patent_applicationDate = rs.getString("application_date");
+					//System.out.println(patent_id + "\t" + patent_name);
+					
+					try {
+						// 如果已有名為 patent_id 的實例，就直接取得 "專利編號" 實例，反之，在 "專利編號" 類別中建立新的 "專利編號" 實例
+						patentID_OWLIndividual = getOWLIndividual(patent_id_OWLClass, patent_id);
+						// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
+						PatentID_OWLIndividual_AddDataPropertyValue();
+						// 如果 該筆專利沒有 "參考文獻"，就不會建立 "is_referenced_by(被參考)" 物件屬性 關聯
+						if (hasPatentReferences()) BuildRelationships_PatentsAreReferencedByPatents();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					
+					count++;
+					if (count == 1000) break;
+				}
+			}
+		});
 	}
 	
 	/**
 	 * 將 Ontology 存成 OWL 檔
 	 */
-	private void SaveOntology() throws Exception {
+	private void SaveOntology_to_OWL() throws Exception {
 		FileOutputStream fileOutputStream = new FileOutputStream(new File("patent_ontology.owl"));
 		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream, "UTF-8");
 		OWLModelWriter owlModelWriter = 
