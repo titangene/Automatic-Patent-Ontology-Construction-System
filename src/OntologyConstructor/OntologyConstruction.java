@@ -182,7 +182,7 @@ public class OntologyConstruction {
 	
 	private boolean hasPatentReferences() {
 		// TODO 其他無參考文獻的可能
-		return patent_references != "" || patent_references != "無";
+		return patent_references != "NULL";
 	}
 	
 	private void ContentAnalysis() throws Exception {
@@ -224,8 +224,8 @@ public class OntologyConstruction {
 	private void SaveOntology_to_OWL() throws Exception {
 		FileOutputStream fileOutputStream = new FileOutputStream(new File("patent_ontology.owl"));
 		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream, "UTF-8");
-		OWLModelWriter owlModelWriter = 
-				new OWLModelWriter(owlModel, owlModel.getTripleStoreModel().getActiveTripleStore(), outputStreamWriter);
+		OWLModelWriter owlModelWriter = new OWLModelWriter(owlModel, 
+				owlModel.getTripleStoreModel().getActiveTripleStore(), outputStreamWriter);
 		owlModelWriter.write();
 		fileOutputStream.flush();
 		outputStreamWriter.flush();
