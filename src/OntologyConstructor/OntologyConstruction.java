@@ -229,7 +229,29 @@ public class OntologyConstruction {
 		    	patentID_IsReferencedBy_OWLIndividual = getOWLIndividual(patentID_OWLClass, patent_reference_patentID);
 		    	// 新增 被參考的 "專利編號" 實例 與 參考該  "專利編號" 實例之間的 "is_referenced_by(被參考)" 物件屬性關聯
 		    	PatentID_IsReferencedBy_PatentID_OWLIndividual_AddObjectPropertyValue();
+		    	
+		    	// 如果是台灣專利才建立 "專利類型為" 物件屬性 關聯："專利編號" 專利類型為 "專利類型"
+		    	if (IsTW_Patent(patent_reference_patentID))
+		    		BuildRelationships_PatentType(patentID_IsReferencedBy_OWLIndividual, patent_reference_patentID);
 	    	}
+		}
+	}
+	
+	/**
+	 * 建立 "專利類型為" 物件屬性 關聯："專利編號" 專利類型為 "專利類型"
+	 */
+	private void BuildRelationships_PatentType(OWLIndividual _OWLIndividual, String _patentID) throws Exception {
+		char patentType = _patentID.charAt(2);
+		switch (patentType) {
+			case 'I':	// 發明(Invention)
+				_OWLIndividual.addPropertyValue(patentType_OWLObjectProperty, patentType_Invention_OWLIndividual);
+				break;
+			case 'M':	// 新型(Model)
+				_OWLIndividual.addPropertyValue(patentType_OWLObjectProperty, patentType_Model_OWLIndividual);
+				break;
+			case 'D':	// 新式樣/設計(Design)
+				_OWLIndividual.addPropertyValue(patentType_OWLObjectProperty, patentType_Design_OWLIndividual);
+				break;
 		}
 	}
 	
@@ -241,6 +263,10 @@ public class OntologyConstruction {
 	private boolean IsPatentID_Regex() {
 		// TODO Array PatentID Filter
 		return !matcher.group(1).contains(".");
+	}
+	
+	private boolean IsTW_Patent(String _patentID) {
+		return _patentID.contains("TW");
 	}
 	
 	private boolean hasPatentReferences() {
@@ -267,6 +293,8 @@ public class OntologyConstruction {
 						patentID_OWLIndividual = getOWLIndividual(patentID_OWLClass, patentID);
 						// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
 						PatentID_OWLIndividual_AddDataPropertyValue();
+						// 建立 "專利類型為" 物件屬性 關聯："專利編號" 專利類型為 "專利類型"
+						BuildRelationships_PatentType(patentID_OWLIndividual, patentID);
 						// 如果 該筆專利沒有 "參考文獻"，就不會建立 "is_referenced_by(被參考)" 物件屬性 關聯
 						if (hasPatentReferences()) BuildRelationships_PatentsAreReferencedByPatents();
 					} catch (Exception e) {
