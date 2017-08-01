@@ -25,9 +25,9 @@ public class OntologyConstruction {
 	OWLModel owlModel;
 	
 	// Class (類別)
-	OWLNamedClass patent_information_OWLClass;	// 專利資訊
-	OWLNamedClass patent_id_OWLClass;			// 專利編號
-	OWLNamedClass patent_category_OWLClass;		// 專利分類
+	OWLNamedClass patentInformation_OWLClass;	// 專利資訊
+	OWLNamedClass patentID_OWLClass;			// 專利編號
+	OWLNamedClass patentCategory_OWLClass;		// 專利分類
 	OWLNamedClass IPC_OWLClass;					// 國際分類號_IPC
 	OWLNamedClass LOC_OWLClass;					// 設計分類號_LOC
 //	OWLNamedClass patent_relationship_person_OWLClass;	// 專利關係人
@@ -35,28 +35,28 @@ public class OntologyConstruction {
 //	OWLNamedClass applicant_OWLClass;			// 申請人
 	
 	// DataProperty (資料屬性)
-	OWLDatatypeProperty patent_name_OWLDataProperty;		// 專利名稱
-	OWLDatatypeProperty application_date_OWLDataProperty;	// 申請日
+	OWLDatatypeProperty patentName_OWLDataProperty;		// 專利名稱
+	OWLDatatypeProperty applicationDate_OWLDataProperty;	// 申請日
 	OWLDatatypeProperty reference_OWLDataProperty;			// 參考文獻
 	OWLDatatypeProperty inventor_OWLDataProperty;			// 發明人
 	OWLDatatypeProperty applicant_OWLDataProperty;			// 申請人
 	
 	// ObjectProperty (物件屬性)
-	OWLObjectProperty is_referenced_by_OWLObjectProperty;	// is_referenced_by (被參考)
+	OWLObjectProperty isReferencedBy_OWLObjectProperty;	// is_referenced_by (被參考)
 	
 	// Individual (實例)
 	OWLIndividual patentID_OWLIndividual;		// 專利編號
-	OWLIndividual patentID_is_referenced_by_OWLIndividual;	// 專利編號 (被參考)
+	OWLIndividual patentID_IsReferencedBy_OWLIndividual;	// 專利編號 (被參考)
 	
-	String patent_id;
-	String patent_name;
-	String patent_applicationDate;
-	String patent_inventor;
-	String patent_applicant;
-	String patent_references;
+	String patentID;
+	String patentName;
+	String patentApplicationDate;
+	String patentInventor;
+	String patentApplicant;
+	String patentReferences;
 	
 	// 正規表達式：找出 參考文獻中 所有的 專利編號 (任何國家、單位的專利編號)
-	final String regex_reference_patentID = "(\\W?)([A-Z]{2,4}[0-9]{1,5}[A-Z-\\/／]?[0-9]{2,}[-(]?[A-Z]?[0-9]+[)]?[A-Z]?[A-Z]?)";
+	final String regex_Reference_patentID = "(\\W?)([A-Z]{2,4}[0-9]{1,5}[A-Z-\\/／]?[0-9]{2,}[-(]?[A-Z]?[0-9]+[)]?[A-Z]?[A-Z]?)";
 	Pattern pattern;
 	Matcher matcher;
 	
@@ -87,12 +87,12 @@ public class OntologyConstruction {
 	 */
 	private void CreateOWLClass() throws Exception {
 		// 建立 "專利資訊" Class 中新增一個 child class "專利編號"
-		patent_information_OWLClass = owlModel.createOWLNamedClass("專利資訊");
-		patent_id_OWLClass = owlModel.createOWLNamedSubclass("專利編號", patent_information_OWLClass);	
+		patentInformation_OWLClass = owlModel.createOWLNamedClass("專利資訊");
+		patentID_OWLClass = owlModel.createOWLNamedSubclass("專利編號", patentInformation_OWLClass);	
 		// 在 "專利分類" class 中新增兩個 child class "國際分類號_IPC"、"設計分類號_LOC"
-		patent_category_OWLClass = owlModel.createOWLNamedClass("專利分類");
-		IPC_OWLClass = owlModel.createOWLNamedSubclass("國際分類號_IPC", patent_category_OWLClass);	
-		LOC_OWLClass = owlModel.createOWLNamedSubclass("設計分類號_LOC", patent_category_OWLClass);
+		patentCategory_OWLClass = owlModel.createOWLNamedClass("專利分類");
+		IPC_OWLClass = owlModel.createOWLNamedSubclass("國際分類號_IPC", patentCategory_OWLClass);	
+		LOC_OWLClass = owlModel.createOWLNamedSubclass("設計分類號_LOC", patentCategory_OWLClass);
 		// 在 "專利關係人" class 中新增兩個 child class "發明人"、"申請人"
 //		patent_relationship_person_OWLClass = owlModel.createOWLNamedClass("專利關係人");
 //		inventor_OWLClass = owlModel.createOWLNamedSubclass("發明人", patent_relationship_person_OWLClass);
@@ -108,8 +108,8 @@ public class OntologyConstruction {
 	 * - 申請人
 	 */
 	private void CreateOWLDataProperty() throws Exception {
-		patent_name_OWLDataProperty = owlModel.createOWLDatatypeProperty("專利名稱");
-		application_date_OWLDataProperty = owlModel.createOWLDatatypeProperty("申請日");
+		patentName_OWLDataProperty = owlModel.createOWLDatatypeProperty("專利名稱");
+		applicationDate_OWLDataProperty = owlModel.createOWLDatatypeProperty("申請日");
 		reference_OWLDataProperty = owlModel.createOWLDatatypeProperty("參考文獻");
 		inventor_OWLDataProperty = owlModel.createOWLDatatypeProperty("發明人");
 		applicant_OWLDataProperty = owlModel.createOWLDatatypeProperty("申請人");
@@ -122,26 +122,26 @@ public class OntologyConstruction {
 	private void CreateOWLObjectProperty() throws Exception {
 		// 建立 "is_referenced_by(被參考)" 物件屬性，Domain 和 Range 都設為 "專利編號"
 		// "專利編號" is_referenced_by "專利編號"
-		is_referenced_by_OWLObjectProperty = owlModel.createOWLObjectProperty("is_referenced_by(被參考)");
-		is_referenced_by_OWLObjectProperty.setDomain(patent_id_OWLClass);
-		is_referenced_by_OWLObjectProperty.setRange(patent_id_OWLClass);
+		isReferencedBy_OWLObjectProperty = owlModel.createOWLObjectProperty("is_referenced_by(被參考)");
+		isReferencedBy_OWLObjectProperty.setDomain(patentID_OWLClass);
+		isReferencedBy_OWLObjectProperty.setRange(patentID_OWLClass);
 	}
 	
 	/**
 	 * 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
 	 */
 	private void PatentID_OWLIndividual_AddDataPropertyValue() throws Exception {
-		patentID_OWLIndividual.addPropertyValue(patent_name_OWLDataProperty, patent_name);
-		patentID_OWLIndividual.addPropertyValue(application_date_OWLDataProperty, patent_applicationDate);
-		patentID_OWLIndividual.addPropertyValue(inventor_OWLDataProperty, patent_inventor);
-		patentID_OWLIndividual.addPropertyValue(applicant_OWLDataProperty, patent_applicant);
+		patentID_OWLIndividual.addPropertyValue(patentName_OWLDataProperty, patentName);
+		patentID_OWLIndividual.addPropertyValue(applicationDate_OWLDataProperty, patentApplicationDate);
+		patentID_OWLIndividual.addPropertyValue(inventor_OWLDataProperty, patentInventor);
+		patentID_OWLIndividual.addPropertyValue(applicant_OWLDataProperty, patentApplicant);
 	}
 	
 	/**
 	 * 新增 被參考的 "專利編號" 實例 與 參考該  "專利編號" 實例之間的 "is_referenced_by(被參考)" 物件屬性關聯
 	 */
-	private void PatentID_is_referenced_by_OWLIndividual_AddObjectPropertyValue() throws Exception {
-		patentID_is_referenced_by_OWLIndividual.addPropertyValue(is_referenced_by_OWLObjectProperty, patentID_OWLIndividual);
+	private void PatentID_IsReferencedBy_PatentID_OWLIndividual_AddObjectPropertyValue() throws Exception {
+		patentID_IsReferencedBy_OWLIndividual.addPropertyValue(isReferencedBy_OWLObjectProperty, patentID_OWLIndividual);
 	}
 	
 	/**
@@ -154,18 +154,18 @@ public class OntologyConstruction {
 	}
 	
 	private void BuildRelationships_PatentsAreReferencedByPatents() throws Exception {
-//		String[] patent_reference_ary = patent_references.split("; ");
+		//String[] patent_reference_ary = patent_references.split("; ");
 		// 正規表達式：找出 參考文獻中 所有的 專利編號 (任何國家、單位的專利編號)
-		matcher = SetMatcher(regex_reference_patentID, patent_references);
+		matcher = SetMatcher(regex_Reference_patentID, patentReferences);
 		// 取出符合的項目
 		while (matcher.find()) {
 		    if (IsPatentID_Regex()) {
 		    	String patent_reference_patentID = matcher.group(2);
 		    	// 如果已有名為 patent_reference_patentID 的實例，就直接取得 "被參考的專利編號" 實例
 		    	// 反之，在 "專利編號" 類別中建立新的 "被參考的專利編號" 實例
-		    	patentID_is_referenced_by_OWLIndividual = getOWLIndividual(patent_id_OWLClass, patent_reference_patentID);
+		    	patentID_IsReferencedBy_OWLIndividual = getOWLIndividual(patentID_OWLClass, patent_reference_patentID);
 		    	// 新增 被參考的 "專利編號" 實例 與 參考該  "專利編號" 實例之間的 "is_referenced_by(被參考)" 物件屬性關聯
-		    	PatentID_is_referenced_by_OWLIndividual_AddObjectPropertyValue();
+		    	PatentID_IsReferencedBy_PatentID_OWLIndividual_AddObjectPropertyValue();
 	    	}
 		}
 	}
@@ -181,8 +181,7 @@ public class OntologyConstruction {
 	}
 	
 	private boolean hasPatentReferences() {
-		// TODO 其他無參考文獻的可能
-		return patent_references != "NULL";
+		return patentReferences != null;
 	}
 	
 	private void ContentAnalysis() throws Exception {
@@ -192,17 +191,17 @@ public class OntologyConstruction {
 				int count = 0;
 				while (rs.next()) {
 					// DB 內都是台灣專利，所以自動加上國碼
-					patent_id = "TW" + rs.getString("id");
-					patent_name = rs.getString("name");
-					patent_inventor = rs.getString("inventor");
-					patent_applicant = rs.getString("applicant");
-					patent_references = rs.getString("reference");
-					patent_applicationDate = rs.getString("application_date");
+					patentID = "TW" + rs.getString("id");
+					patentName = rs.getString("name");
+					patentInventor = rs.getString("inventor");
+					patentApplicant = rs.getString("applicant");
+					patentReferences = rs.getString("reference");
+					patentApplicationDate = rs.getString("application_date");
 					//System.out.println(patent_id + "\t" + patent_name);
 					
 					try {
 						// 如果已有名為 patent_id 的實例，就直接取得 "專利編號" 實例，反之，在 "專利編號" 類別中建立新的 "專利編號" 實例
-						patentID_OWLIndividual = getOWLIndividual(patent_id_OWLClass, patent_id);
+						patentID_OWLIndividual = getOWLIndividual(patentID_OWLClass, patentID);
 						// 在 "專利編號" 的實例中設定 "資料屬性"：專利名稱、申請日、發明人、申請人
 						PatentID_OWLIndividual_AddDataPropertyValue();
 						// 如果 該筆專利沒有 "參考文獻"，就不會建立 "is_referenced_by(被參考)" 物件屬性 關聯
