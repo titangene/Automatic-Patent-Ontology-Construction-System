@@ -20,7 +20,7 @@ import jdbc.DBOperations;
 import jdbc.Mysql_Select;
 
 public class OntologyConstruction {
-	DBOperations dbOperations = new DBOperations();
+	private DBOperations dbOperations = new DBOperations();
 	
 	OWLModel owlModel;
 	
@@ -55,10 +55,13 @@ public class OntologyConstruction {
 	// ObjectProperty (物件屬性)
 	OWLObjectProperty isReferencedBy_OWLObjectProperty;	// is_referenced_by (被參考)
 	OWLObjectProperty patentType_OWLObjectProperty;		// 專利類型為
+	OWLObjectProperty inventor_OWLObjectProperty;		// 發明人為
 	
 	// Individual (實例)
-	OWLIndividual patentID_OWLIndividual;		// 專利編號
+	OWLIndividual patentID_OWLIndividual;					// 專利編號
 	OWLIndividual patentID_IsReferencedBy_OWLIndividual;	// 專利編號 (被參考)
+	OWLIndividual inventor_OWLIndividual;					// 發明人
+	OWLIndividual applicant_OWLIndividual;					// 申請人
 	OWLIndividual patentType_Invention_OWLIndividual;		// 發明 (Invention)
 	OWLIndividual patentType_Model_OWLIndividual;			// 新型 (Model)
 	OWLIndividual patentType_Design_OWLIndividual;			// 新式樣/設計 (Design)
@@ -66,12 +69,13 @@ public class OntologyConstruction {
 	String patentID;
 	String patentName;
 	String patentApplicationDate;
-	String patentInventor;
+	String patentInventors;
 	String patentApplicant;
 	String patentReferences;
 	
 	// 正規表達式：找出 參考文獻中 所有的 專利編號 (任何國家、單位的專利編號)
 	final String regex_Reference_patentID = "(\\W?)([A-Z]{2,4}[0-9]{1,5}[A-Z-\\/／]?[0-9]{2,}[-(]?[A-Z]?[0-9]+[)]?[A-Z]?[A-Z]?)";
+	final String regex_inventor = "((\\w+[,.\\-\\s]{1,2})+)";
 	Pattern pattern;
 	Matcher matcher;
 	
@@ -173,6 +177,10 @@ public class OntologyConstruction {
 		patentType_OWLObjectProperty = owlModel.createOWLObjectProperty("專利類型為");
 		patentType_OWLObjectProperty.setDomain(patentID_OWLClass);
 		patentType_OWLObjectProperty.setRange(patentType_OWLClass);
+		
+		inventor_OWLObjectProperty = owlModel.createOWLObjectProperty("發明人為");
+		inventor_OWLObjectProperty.setDomain(patentID_OWLClass);
+		inventor_OWLObjectProperty.setRange(inventor_OWLClass);
 	}
 	
 	/**
@@ -255,6 +263,36 @@ public class OntologyConstruction {
 		}
 	}
 	
+	private void BuildRelationships_PatentInventor() throws Exception {
+		String[] patentInventors_ary = patentInventors.split("; ");
+        
+        for (String patentInventor: patentInventors_ary) {
+        	inventor_OWLIndividual = getOWLIndividual(inventor_OWLClass, patentInventor);
+        	patentID_OWLIndividual.addPropertyValue(inventor_OWLObjectProperty, inventor_OWLIndividual);
+            matcher = SetMatcher(regex_inventor, patentInventor);
+            boolean isMatch = false;
+            while (matcher.find()) {
+            	String s_ch = patentInventor.substring(0, matcher.start());
+                s_ch = s_ch.replace(" ", "‧");
+                if (s_ch.charAt(s_ch.length() - 1) == '‧')
+                    s_ch = s_ch.substring(0, s_ch.length() - 1);
+                String s_en = patentInventor.substring(matcher.start(), patentInventor.length() - 1);
+                s_en = s_en.replace(", ", ",");
+                s_en = s_en.replace(" ", "_");
+                String _patentInventor = s_ch + "(" + s_en + ")";
+                inventor_OWLIndividual = getOWLIndividual(inventor_OWLClass, _patentInventor);
+	        	patentID_OWLIndividual.addPropertyValue(inventor_OWLObjectProperty, inventor_OWLIndividual);
+                //System.out.println(matcher.group(1));
+                //System.out.println(matcher.start());
+                isMatch = true;
+            }
+            if (!isMatch) {
+            	String s_ch = patentInventor.replace(" ", "‧");
+            	inventor_OWLIndividual = getOWLIndividual(inventor_OWLClass, s_ch);
+            }
+        }
+	}
+	
 	private Matcher SetMatcher(String _regex, String matcher_value) throws Exception {
 		pattern = Pattern.compile(_regex);
 		return pattern.matcher(matcher_value);
@@ -282,11 +320,11 @@ public class OntologyConstruction {
 					// DB 內都是台灣專利，所以自動加上國碼
 					patentID = "TW" + rs.getString("id");
 					patentName = rs.getString("name");
-					patentInventor = rs.getString("inventor");
+					patentInventors = rs.getString("inventor");
 					patentApplicant = rs.getString("applicant");
 					patentReferences = rs.getString("reference");
 					patentApplicationDate = rs.getString("application_date");
-					//System.out.println(patent_id + "\t" + patent_name);
+					//System.out.println(patentID + "\t" + patentName);
 					
 					try {
 						// 如果已有名為 patent_id 的實例，就直接取得 "專利編號" 實例，反之，在 "專利編號" 類別中建立新的 "專利編號" 實例
@@ -297,6 +335,9 @@ public class OntologyConstruction {
 						BuildRelationships_PatentType(patentID_OWLIndividual, patentID);
 						// 如果 該筆專利沒有 "參考文獻"，就不會建立 "is_referenced_by(被參考)" 物件屬性 關聯
 						if (hasPatentReferences()) BuildRelationships_PatentsAreReferencedByPatents();
+						
+						BuildRelationships_PatentInventor();
+						
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
