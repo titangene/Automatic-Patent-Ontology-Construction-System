@@ -1,0 +1,13 @@
+{
+  // 圖片儲存的路徑
+  "pasteImage.path": "${projectRoot}/screenshot",
+  "editor.tabSize": 4,
+  "editor.insertSpaces": false,
+  "editor.detectIndentation": true,
+  "files.encoding": "utf8",
+  "code-runner.executorMap": {
+    "java": "cd $dir && javac -encoding utf-8 $fileName && java $fileNameWithoutExt"
+  },
+  "code-runner.runInTerminal": true,
+  "java.jdt.ls.vmargs": "-noverify -Xmx1G -XX:+UseG1GC -XX:+UseStringDeduplication -Dfile.encoding=UTF-8"
+}

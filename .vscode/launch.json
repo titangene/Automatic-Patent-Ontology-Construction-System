@@ -1,0 +1,30 @@
+{
+	// 使用 IntelliSense 以得知可用的屬性。
+	// 暫留以檢視現有屬性的描述。
+	// 如需詳細資訊，請瀏覽: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"name": "Debug (Launch)-SPARQL",
+			"request": "launch",
+			"cwd": "${workspaceFolder}",
+			"console": "internalConsole",
+			"stopOnEntry": false,
+			"mainClass": "SPARQL.SPARQL",
+			"projectName": "Automatic-Patent-Ontology-Construction-System",
+			"args": ""
+		},
+		{
+			"type": "java",
+			"name": "Debug (Launch)-OntologyConstructor",
+			"request": "launch",
+			"cwd": "${workspaceFolder}",
+			"console": "internalConsole",
+			"stopOnEntry": false,
+			"mainClass": "ontology.OntologyConstructor",
+			"projectName": "Automatic-Patent-Ontology-Construction-System",
+			"args": ""
+		}
+	]
+}
