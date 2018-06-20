@@ -15,11 +15,13 @@ public class DBSource {
 	private String url;
 	private String username;
 	private String password;
-	private int poolmax; // ³s±µ¦À¤¤³Ì¤jConnection¼Æ¥Ø
+	// é€£æ¥æ± ä¸­æœ€å¤§ Connection æ•¸ç›®
+	private int poolmax;
 	private List<Connection> connectionsPool;
 	
 	public DBSource() throws IOException, ClassNotFoundException {
-		this("jdbc_tw-patent.properties");		// Åª¨ú jdbc ³s±µ³]©wÀÉ
+		// è®€å– jdbc é€£æ¥è¨­å®šæª”
+		this("jdbc_tw-patent.properties");
 	}
 
 	public DBSource(String configFile) throws IOException, ClassNotFoundException {

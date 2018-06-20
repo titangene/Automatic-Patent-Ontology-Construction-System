@@ -11,17 +11,17 @@ public class DBOperations {
 	private DBSource dbsource;
 	
 	private Connection conn = null; // Database objects
-	private Statement stmt = null; // °õ¦æ,¶Ç¤J¤§sql¬°§¹¾ã¦r¦ê
-	private ResultSet rs = null; // µ²ªG¶°
-	// °õ¦æ,¶Ç¤J¤§sql¬°¹wÀx¤§¦r¥Ó,»İ­n¶Ç¤JÅÜ¼Æ¤§¦ì¸m ¡C¥ı§Q¥Î?¨Ó°µ¼Ğ¥Ü
+	private Statement stmt = null; // åŸ·è¡Œï¼Œå‚³å…¥ä¹‹ sql ç‚ºå®Œæ•´å­—ä¸²
+	private ResultSet rs = null; // çµæœé›†
+	// åŸ·è¡Œï¼Œå‚³å…¥ä¹‹ sql ç‚ºé å„²ä¹‹å­—ç”³ï¼Œéœ€è¦å‚³å…¥è®Šæ•¸ä¹‹ä½ç½®ï¼Œå…ˆåˆ©ç”¨ ? ä¾†åšæ¨™ç¤º
 	private PreparedStatement preStmt = null;
 	
 	public DBOperations() {
 		try {
         	//dbsource = new DBSource("jdbc2.properties");
             dbsource = new DBSource();
-            conn = dbsource.getConnection();
-            System.out.println("MySQL Connection");
+			conn = dbsource.getConnection();
+			System.out.println("MySQL Connection");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -81,8 +81,8 @@ public class DBOperations {
 		}
 	}
 	
-	// §¹¾ã¨Ï¥Î§¹¸ê®Æ®w«á,°O±o­nÃö³¬©Ò¦³Object
-	// §_«h¦bµ¥«İTimeout®É,¥i¯à·|¦³Connection poorªºª¬ªp
+	// å®Œæ•´ä½¿ç”¨å®Œè³‡æ–™åº«å¾Œ,è¨˜å¾—è¦é—œé–‰æ‰€æœ‰ Object
+	// å¦å‰‡åœ¨ç­‰å¾… Timeout æ™‚,å¯èƒ½æœƒæœ‰ Connection poor çš„ç‹€æ³
 	private void Close() {
 		if (rs != null) {
 			try {
